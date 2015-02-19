@@ -1,12 +1,10 @@
 {
   "name": "go-servejs",
   "version": "0.0.1",
-  "description": "A hybrid of golang and js",
+  "description": "Serve javascript from a golang http.Handler",
   "author": "Lachlan Donald",
   "license": "BSD",
   "dependencies": {
-    "expose-loader": "^0.6.0",
-    "express": "^4.11.2",
     "inject-loader": "^1.0.0",
     "json-loader": "^0.5.1",
     "superagent": "^0.21.0"

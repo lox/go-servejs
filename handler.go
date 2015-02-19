@@ -1,11 +1,13 @@
 package servejs
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type Handler struct {
@@ -28,14 +30,19 @@ func (e *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer ctx.Destroy()
+
+	log.Printf("serving context %#v", ctx)
 
 	errorCh := make(chan error)
 	go func() {
 		ctx.BindFunc("__goWrite", func(f *jsFunc) {
+			log.Printf("called __goWrite")
 			w.Write([]byte(f.String(1)))
 		})
 
 		ctx.BindFunc("__goEnd", func(f *jsFunc) {
+			log.Printf("called __goEnd")
 			errorCh <- nil
 		})
 
@@ -46,7 +53,13 @@ func (e *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	err = <-errorCh
+	log.Printf("waiting for js to call end")
+	select {
+	case err = <-errorCh:
+	case <-time.After(time.Second * 1):
+		err = errors.New("timed out waiting for response from js")
+	}
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -11,8 +11,7 @@ const jsInit = `
 	`
 
 type jsContext struct {
-	ctx         *duktape.Context
-	RequireFunc func(id string) (string, error)
+	ctx *duktape.Context
 }
 
 func newJsContext() (*jsContext, error) {
@@ -52,6 +51,10 @@ func (c *jsContext) BindFunc(name string, f func(p *jsFunc)) error {
 		return 1
 	})
 	return nil
+}
+
+func (c *jsContext) Destroy() {
+	c.ctx.DestroyHeap()
 }
 
 type jsResult struct {
