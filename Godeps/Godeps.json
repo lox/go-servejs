@@ -1,0 +1,10 @@
+{
+	"ImportPath": "github.com/lox/go-servejs",
+	"GoVersion": "go1.3.3",
+	"Deps": [
+		{
+			"ImportPath": "github.com/olebedev/go-duktape",
+			"Rev": "339dafb58d7cfd3c8cf3f921b6b41b5d9c1e5ab7"
+		}
+	]
+}
