@@ -1,4 +1,4 @@
-var serve = require('../serve.js');
+var serve = require('../index.js');
 
 serve(function (req, res) {
   res.send('Hello World');

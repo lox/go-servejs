@@ -1,9 +1,10 @@
 {
   "name": "go-servejs",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Serve javascript from a golang http.Handler",
   "author": "Lachlan Donald",
   "license": "BSD",
+  "main": "index.js",
   "dependencies": {
     "inject-loader": "^1.0.0",
     "json-loader": "^0.5.1",
