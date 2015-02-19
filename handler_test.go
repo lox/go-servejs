@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 )
 
 func BenchmarkHelloWorldExample(b *testing.B) {
@@ -32,10 +31,9 @@ func BenchmarkHelloWorldExample(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		log.Printf("body: %s", body)
 		if res.StatusCode != http.StatusOK {
+			log.Printf("response: %s", body)
 			b.Fatalf("Got status %s, expected OK", res.Status)
 		}
-		time.Sleep(time.Millisecond * 10)
 	}
 }

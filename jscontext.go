@@ -14,11 +14,17 @@ type jsContext struct {
 	ctx *duktape.Context
 }
 
-func newJsContext() (*jsContext, error) {
+func newJsContext(src ...string) (*jsContext, error) {
 	ctx := &jsContext{ctx: duktape.NewContext()}
 
 	if _, err := ctx.Eval(jsInit); err != nil {
 		return nil, err
+	}
+
+	for _, js := range src {
+		if _, err := ctx.Eval(js); err != nil {
+			return nil, err
+		}
 	}
 
 	return ctx, nil
@@ -51,10 +57,6 @@ func (c *jsContext) BindFunc(name string, f func(p *jsFunc)) error {
 		return 1
 	})
 	return nil
-}
-
-func (c *jsContext) Destroy() {
-	c.ctx.DestroyHeap()
 }
 
 type jsResult struct {
