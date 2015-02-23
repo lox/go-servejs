@@ -37,10 +37,19 @@ func main() {
 In js:
 
 ```js
-var serve = require('go-servejs');
+var servejs = require('go-servejs');
+var app = servejs()
 
-serve(function (req, res) {
-  res.send('Hello World');
-  res.end();
+// store our message to display
+var message = "Hello World!"
+
+// register a route
+app.get('/', function(req, res) {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.end(message + '\n');
 })
+
+// listen for requests
+app.listen();
 ```

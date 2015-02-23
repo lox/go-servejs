@@ -6,11 +6,13 @@
   "license": "BSD",
   "main": "index.js",
   "dependencies": {
-    "inject-loader": "^1.0.0",
-    "json-loader": "^0.5.1",
+    "debug": "^2.1.1",
+    "router": "^1.0.0",
     "superagent": "^0.21.0"
   },
   "devDependencies": {
-    "webpack": "^1.4.12"
+    "webpack": "^1.4.12",
+    "inject-loader": "^1.0.0",
+    "json-loader": "^0.5.1"
   }
 }

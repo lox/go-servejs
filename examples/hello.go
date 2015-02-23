@@ -14,5 +14,8 @@ func main() {
 	}
 
 	http.Handle("/", servejs.New(f))
-	http.ListenAndServe(":8000", nil)
+	http.HandleFunc("/favicon.ico", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "Not Found", http.StatusNotFound)
+	}))
+	http.ListenAndServe(":3000", nil)
 }

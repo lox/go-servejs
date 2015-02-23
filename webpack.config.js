@@ -3,19 +3,34 @@ var webpack = require('webpack');
 module.exports = {
     entry: {
         hello: "./examples/hello.js",
+        serve: "./serve.js"
     },
     output: {
         path: __dirname + "/build",
         filename: "[name].js",
         chunkFilename: "[id].js"
     },
-    externals: {
-        "fs": "NodeFs",
-        "net": "NodeNet",
-    },
     module: {
         loaders: [
             { test: /\.json$/, loader: 'json-loader' },
         ]
     },
+    resolve: {
+        alias: {
+            debug: __dirname + "/lib/debug.js",
+            net: __dirname + "/lib/net.js",
+            fs: __dirname + "/lib/fs.js"
+        }
+    },
+    plugins: [
+        // new webpack.optimize.UglifyJsPlugin({minimize: true})
+    ],
+    node: {
+        console: false,
+        process: true,
+        global: true,
+        Buffer: false,
+        __filename: "/index.js",
+        __dirname: "empty"
+    }
 };
