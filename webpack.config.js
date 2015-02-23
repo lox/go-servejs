@@ -3,7 +3,7 @@ var webpack = require('webpack');
 module.exports = {
     entry: {
         hello: "./examples/hello.js",
-        serve: "./serve.js"
+        serve: "./index.js"
     },
     output: {
         path: __dirname + "/build",
@@ -17,6 +17,7 @@ module.exports = {
     },
     resolve: {
         alias: {
+            'go-servejs': __dirname + "/index.js",
             debug: __dirname + "/lib/debug.js",
             net: __dirname + "/lib/net.js",
             fs: __dirname + "/lib/fs.js"

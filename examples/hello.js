@@ -1,8 +1,6 @@
-var servejs = require('../index.js');
+var servejs = require('../serve');
 var app = servejs()
 var debug = require('debug')('example');
-
-debug("starting up");
 
 // store our message to display
 var message = "Hello World!"
@@ -16,5 +14,5 @@ app.get('/', function(req, res) {
 
 // listen for requests
 app.listen(3000, function(){
-   debug("listening on port 3000");
+    debug("listening on port %d", app.address().port);
 });
