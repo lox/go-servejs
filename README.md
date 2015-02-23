@@ -29,12 +29,7 @@ import (
 )
 
 func main() {
-	f, err := os.Open("./build/hello.js")
-	if err != nil {
-		panic(err)
-	}
-
-	http.Handle("/", servejs.New(f))
+	http.Handle("/", servejs.NewHandler(servejs.File("./build/hello.js")))
 	http.ListenAndServe(":8000", nil)
 }
 ```
@@ -54,7 +49,4 @@ app.get('/', function(req, res) {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.end(message + '\n');
 })
-
-// listen for requests
-app.listen();
 ```
