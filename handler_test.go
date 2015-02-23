@@ -2,7 +2,6 @@ package servejs
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,7 +31,6 @@ func BenchmarkHelloWorldExample(b *testing.B) {
 			b.Fatal(err)
 		}
 		if res.StatusCode != http.StatusOK {
-			log.Printf("response: %s", body)
 			b.Fatalf("Got status %s, expected OK", res.Status)
 		}
 	}

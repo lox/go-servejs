@@ -64,6 +64,14 @@ func (e *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Printf(args[0].(string), args[1:]...)
 		})
 
+		ctx.BindFunc("__goHeader", func(f *jsFunc) {
+			w.Header().Set(f.String(1), f.String(2))
+		})
+
+		ctx.BindFunc("__goWriteHeader", func(f *jsFunc) {
+			w.WriteHeader(f.Int(1))
+		})
+
 		ctx.BindFunc("__goWrite", func(f *jsFunc) {
 			w.Write([]byte(f.String(1)))
 		})

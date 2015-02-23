@@ -18,9 +18,7 @@ module.exports = {
     resolve: {
         alias: {
             'go-servejs': __dirname + "/index.js",
-            debug: __dirname + "/lib/debug.js",
-            net: __dirname + "/lib/net.js",
-            fs: __dirname + "/lib/fs.js"
+            debug: __dirname + "/lib/debug.js"
         }
     },
     plugins: [
@@ -28,7 +26,7 @@ module.exports = {
     ],
     node: {
         console: false,
-        process: true,
+        process: false,
         global: true,
         Buffer: false,
         __filename: "/index.js",

@@ -81,6 +81,10 @@ func (f *jsFunc) String(pos int) string {
 	return f.ctx.GetString(1)
 }
 
+func (f *jsFunc) Int(pos int) int {
+	return f.ctx.GetInt(1)
+}
+
 func (f *jsFunc) Args() []interface{} {
 	args := make([]interface{}, f.Len())
 	for i := 1; i <= f.Len(); i++ {

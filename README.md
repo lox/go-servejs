@@ -3,6 +3,11 @@ go-servejs
 
 A golang and npm package to serve server-side javascript via duktape in a Golang http.Handler context.
 
+Status
+------
+
+This is a prototype, at best an experiment. Please don't use for anything that needs to actually work.
+
 Usage
 -----
 
