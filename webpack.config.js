@@ -22,12 +22,12 @@ module.exports = {
         }
     },
     plugins: [
-        // new webpack.optimize.UglifyJsPlugin({minimize: true})
+        //new webpack.optimize.UglifyJsPlugin({minimize: true})
     ],
     node: {
         console: false,
         process: false,
-        global: true,
+        global: false,
         Buffer: false,
         __filename: "/index.js",
         __dirname: "empty"

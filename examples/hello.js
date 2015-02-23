@@ -1,5 +1,5 @@
 var servejs = require('../serve');
-var app = servejs()
+var app = module.exports = servejs()
 var debug = require('debug')('example');
 
 // store our message to display
@@ -11,8 +11,3 @@ app.get('/', function(req, res) {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.end(message + '\n');
 })
-
-// listen for requests
-app.listen(3000, function(){
-    debug("listening on port %d", app.address().port);
-});
