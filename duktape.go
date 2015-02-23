@@ -69,13 +69,14 @@ func (p *contextPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type context struct {
 	*duktape.Context
 	logger *log.Logger
+	appIdx int
 }
 
 func newContext(src SrcFunc) *context {
 	d := duktape.NewContext()
 	ctx := &context{
 		Context: d,
-		logger:  log.New(os.Stdout, fmt.Sprintf("[vm %p] ", d), log.LstdFlags),
+		logger:  log.New(os.Stdout, fmt.Sprintf("[js %p] ", d), log.LstdFlags),
 	}
 
 	if err := evalString(ctx, jsInit); err != nil {
@@ -105,21 +106,13 @@ func newContext(src SrcFunc) *context {
 		panic(err)
 	}
 
-	if !ctx.IsObject(1) {
-		panic(errors.New("expected object to be returned by js"))
-	}
-
+	ctx.appIdx = ctx.GetTopIndex()
 	return ctx
 }
 
 func (ctx *context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	errorCh := make(chan error)
 	serveCh := make(chan bool)
-
-	if !ctx.IsObject(1) {
-		http.Error(w, "expected an object on js stack", http.StatusInternalServerError)
-		return
-	}
 
 	ctx.PushGoFunc("__goHeader", func(_ *duktape.Context) int {
 		w.Header().Set(ctx.GetString(1), ctx.GetString(2))
@@ -141,23 +134,22 @@ func (ctx *context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return 1
 	})
 
+	ctx.PushString("serve")
+	pushCompound(ctx, map[string]string{
+		"method": r.Method,
+		"url":    r.URL.Path,
+	})
+
 	go func() {
-		ctx.PushString("serve")
-		pushCompound(ctx, map[string]string{
-			"method": r.Method,
-			"url":    r.URL.Path,
-		})
-
-		if ctx.PcallProp(1, 1) != 0 {
-			errorCh <- errors.New("expected an object on js stack")
+		if ctx.PcallProp(ctx.appIdx, 1) != 0 {
+			errorCh <- getError(ctx)
 		}
-
 		serveCh <- true
 	}()
 
-	defer ctx.Pop()
 	err := <-errorCh
 	<-serveCh
+	defer ctx.Pop()
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
