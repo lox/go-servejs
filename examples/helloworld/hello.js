@@ -1,4 +1,4 @@
-var servejs = require('../serve');
+var servejs = require('go-servejs');
 var app = module.exports = servejs()
 var debug = require('debug')('example');
 

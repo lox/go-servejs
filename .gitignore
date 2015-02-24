@@ -1,3 +1,4 @@
 node_modules/
 Godeps/_workspace/
 build/
+*.dist.js

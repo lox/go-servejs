@@ -7,7 +7,10 @@
   "main": "index.js",
   "dependencies": {
     "debug": "^2.1.1",
+    "jsx-loader": "^0.12.2",
+    "react": "^0.12.2",
     "router": "^1.0.0",
+    "serialize-javascript": "^1.0.0",
     "superagent": "^0.21.0"
   },
   "devDependencies": {

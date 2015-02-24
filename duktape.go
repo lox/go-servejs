@@ -3,15 +3,21 @@ package servejs
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/olebedev/go-duktape"
 )
+
+var ServerTimeout = time.Second * 15
 
 const jsInit = `
 var self = {},
@@ -60,23 +66,20 @@ func newContextPool(size int, src SrcFunc) *contextPool {
 
 func (p *contextPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := p.get()
-	ctx.logger.Println("found a context")
 	ctx.ServeHTTP(w, r)
-	ctx.logger.Println("returned to pool")
 	p.release(ctx)
 }
 
 type context struct {
 	*duktape.Context
-	logger *log.Logger
 	appIdx int
+	logger io.Writer
 }
 
 func newContext(src SrcFunc) *context {
 	d := duktape.NewContext()
 	ctx := &context{
 		Context: d,
-		logger:  log.New(os.Stdout, fmt.Sprintf("[js %p] ", d), log.LstdFlags),
 	}
 
 	if err := evalString(ctx, jsInit); err != nil {
@@ -85,14 +88,14 @@ func newContext(src SrcFunc) *context {
 
 	// expose env variables to js
 	ctx.PushGoFunc("__goEnv", func(_ *duktape.Context) int {
-		if err := pushCompound(ctx, envVars()); err != nil {
+		if err := pushReflect(ctx, envVars()); err != nil {
 			return 0
 		}
 		return 1
 	})
 
 	ctx.PushGoFunc("__goLog", func(_ *duktape.Context) int {
-		ctx.logger.Println(ctx.GetString(1))
+		log.Println(ctx.GetString(1))
 		return 1
 	})
 
@@ -129,16 +132,31 @@ func (ctx *context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return 1
 	})
 
+	ctx.PushGoFunc("__goServeStatic", func(_ *duktape.Context) int {
+		path := filepath.Join(strings.TrimPrefix(ctx.GetString(1), "//"), ctx.GetString(2))
+		log.Printf("serving static file %s", path)
+		http.ServeFile(w, r, path)
+		errorCh <- nil
+		return 1
+	})
+
 	ctx.PushGoFunc("__goEnd", func(_ *duktape.Context) int {
 		errorCh <- nil
 		return 1
 	})
 
 	ctx.PushString("serve")
-	pushCompound(ctx, map[string]string{
-		"method": r.Method,
-		"url":    r.URL.Path,
+	err := pushReflect(ctx, map[string]interface{}{
+		"method":   r.Method,
+		"url":      r.URL.String(),
+		"path":     r.URL.Path,
+		"query":    jsQueryString(r.URL.Query()),
+		"protocol": r.URL.Scheme,
 	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	go func() {
 		if ctx.PcallProp(ctx.appIdx, 1) != 0 {
@@ -147,7 +165,15 @@ func (ctx *context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		serveCh <- true
 	}()
 
-	err := <-errorCh
+	select {
+	case err = <-errorCh:
+	case <-time.After(ServerTimeout):
+		ctx.DumpContextStdout()
+		http.Error(w, "Timed out waiting for server response",
+			http.StatusGatewayTimeout)
+		return
+	}
+
 	<-serveCh
 	defer ctx.Pop()
 
@@ -155,6 +181,10 @@ func (ctx *context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func jsQueryString(values url.Values) map[string]interface{} {
+	return map[string]interface{}{}
 }
 
 func getError(ctx *context) error {
@@ -179,7 +209,26 @@ func envVars() map[string]string {
 	return env
 }
 
-func pushCompound(ctx *context, obj interface{}) error {
+func pushReflect(ctx *context, obj interface{}) error {
+	v := reflect.ValueOf(obj)
+
+	switch v.Kind() {
+	case reflect.Map:
+		return pushReflectMap(ctx, obj)
+	case reflect.Int:
+		ctx.PushInt(obj.(int))
+	case reflect.Float64:
+		ctx.PushNumber(obj.(float64))
+	case reflect.String:
+		ctx.PushString(obj.(string))
+	default:
+		return fmt.Errorf("Unhandled type %#v", v.Kind())
+	}
+
+	return nil
+}
+
+func pushReflectMap(ctx *context, obj interface{}) error {
 	v := reflect.ValueOf(obj)
 	objIdx := ctx.PushObject()
 
@@ -191,7 +240,7 @@ func pushCompound(ctx *context, obj interface{}) error {
 			if !ok {
 				return errors.New("Only string keys are supported in maps")
 			}
-			if err := pushScalar(ctx, val.Interface()); err != nil {
+			if err := pushReflect(ctx, val.Interface()); err != nil {
 				return err
 			}
 			ctx.PutPropString(objIdx, stringKey)
@@ -200,19 +249,5 @@ func pushCompound(ctx *context, obj interface{}) error {
 		return fmt.Errorf("Unhandled type %#v", v.Kind())
 	}
 
-	return nil
-}
-
-func pushScalar(ctx *context, val interface{}) error {
-	switch typed := val.(type) {
-	case int:
-		ctx.PushInt(typed)
-	case float64:
-		ctx.PushNumber(typed)
-	case string:
-		ctx.PushString(typed)
-	default:
-		return fmt.Errorf("Unhandled scalar type %#v", typed)
-	}
 	return nil
 }
